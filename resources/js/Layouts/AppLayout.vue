@@ -3,7 +3,7 @@
         <TopNavbar></TopNavbar>
 <!--        <Navbar></Navbar>-->
         <div class="page-wrapper">
-            <div class="container-xl pt-3" style="min-height: 350px">
+            <div class="container-fluid pt-3" style="min-height: 350px">
                 <slot/>
             </div>
             <Footer></Footer>

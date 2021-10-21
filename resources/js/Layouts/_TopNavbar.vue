@@ -1,6 +1,6 @@
 <template>
     <header class="navbar navbar-expand-md navbar-light d-print-none">
-        <div class="container-xl">
+        <div class="container-fluid">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
