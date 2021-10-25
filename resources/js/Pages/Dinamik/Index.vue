@@ -1,7 +1,17 @@
 <template>
     <AppLayout>
-        <div class="row mb-2">
-            <div class="col-md-4">
+        <div class="row mb-2 justify-content-between">
+            <div class="col-lg-3">
+                <div class="row mb-3" v-if="SessionKey">
+                    <div class="col">
+                        <input type="text" v-model="search_text" @keypress.enter.prevent="searchText" class="form-control"/>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" @click.prevent="searchText">Ara</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">
@@ -21,14 +31,6 @@
                         <p>PasswordKey: {{PasswordKey}}</p>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="row mb-3" v-if="SessionKey">
-            <div class="col-md-3">
-                <input type="text" v-model="search_text" @keypress.enter.prevent="searchText" class="form-control"/>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" @click.prevent="searchText">Ara</button>
             </div>
         </div>
         <div class="row">
@@ -104,7 +106,8 @@ export default {
             PasswordKey:null,
             AppGuID:null,
             search_text:"m131 rot bas",
-            SearchResult:[]
+            SearchResult:[],
+            PingResult:null
         }
     },
     mounted() {
@@ -121,6 +124,10 @@ export default {
         this.SessionAuth.InstallationGUID = this.AppGuID
         this.SessionAuth.SessionID = this.SessionKey.split('||')[0]
         this.SessionAuth.Password = this.PasswordKey
+
+        if(this.SessionKey != null){
+            this.getPing()
+        }
     },
     filters:{
          formatMoney: function(n) {
@@ -133,21 +140,28 @@ export default {
         }
     },
     methods:{
-        decodeBase64: function (string) {
-            var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
-            var result = ''
-            var i = 0
-            do {
-                var b1 = characters.indexOf(string.charAt(i++))
-                var b2 = characters.indexOf(string.charAt(i++))
-                var b3 = characters.indexOf(string.charAt(i++))
-                var b4 = characters.indexOf(string.charAt(i++))
-                var a = ((b1 & 0x3F) << 2) | ((b2 >> 4) & 0x3)
-                var b = ((b2 & 0xF) << 4) | ((b3 >> 2) & 0xF)
-                var c = ((b3 & 0x3) << 6) | (b4 & 0x3F)
-                result += String.fromCharCode(a) + (b ? String.fromCharCode(b) : '') + (c ? String.fromCharCode(c) : '')
-            } while (i < string.length)
-            return result
+        getPing(){
+            axios.post('ping',{
+                auth:this.SessionAuth
+            }).then( (response)=>{
+                if(response.data.hasOwnProperty('PingResult')){
+                    let ping = JSON.parse(response.data.PingResult)
+                    console.log(ping,'PİNG')
+                    if(ping.ClientBehaviourCommand != null){
+                        this.$swal('Hata!',ping.ClientBehaviourCommand.UserMessage,'error').then((res)=>{
+                            localStorage.removeItem('appGuid')
+                            localStorage.removeItem('sessionKey')
+                            localStorage.removeItem('passwordKey')
+                            localStorage.removeItem('sessionResult')
+                            this.sessionKey = null
+                            this.SessionResult = null
+                            this.SearchResult = null
+                            this.PasswordKey = null
+                            this.AppGuID = null
+                        })
+                    }
+                }
+            })
         },
         searchText(){
             axios.post('ProductSearch',{
