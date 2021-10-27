@@ -1,17 +1,18 @@
 <template>
     <AppLayout>
         <div class="row mb-2 justify-content-between">
-            <div class="col-lg-3">
-                <div class="row mb-3" v-if="SessionKey">
+            <div class="col-lg-3"  v-if="SessionKey">
+                <div class="row mb-3">
                     <div class="col">
                         <input type="text" v-model="search_text" @keypress.enter.prevent="searchText" class="form-control"/>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-primary" @click.prevent="searchText">Ara</button>
+                        <button class="btn btn-primary" @keypress.prevent="searchText" @click.prevent="searchText">Ara</button>
+                        <small :class="{'text-danger':!SessionKey}" class=" text-decoration-underline cursor-pointer" @click="DevMode=!DevMode" v-if="!DevMode">Dev</small>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-4" v-if="!SessionKey || DevMode">
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">
@@ -20,7 +21,9 @@
                             SessionResult</h2>
                         <div class="card-options">
                             <button class="btn btn-primary btn-sm" @click="getGuid">GetGUID</button>
-                            <button v-if="!SessionKey" class="btn btn-primary btn-sm" @click="getSession">Bağlan</button>
+                            <button v-if="!SessionKey" class="btn ms-1 btn-primary btn-sm" @click="getSession">Bağlan</button>
+                            <span class="mx-1 text-muted">–</span>
+                            <button class="btn btn-danger btn-sm" @click="DevMode=!DevMode">X</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -58,7 +61,7 @@
                                 <span v-else  class="badge bg-green">OK</span>
                             </td>
                             <td>{{prod.UnitType}}</td>
-                            <td><span :title="prod.NetPriceWVat | formatMoney">{{prod.NetPriceWVat | formatMoney}} - {{ prod.NetPriceWVat | hesapla| formatMoney }}
+                            <td><span title="geliş - satış - liste">{{prod.NetPriceWVat | formatMoney}} - {{ prod.NetPriceWVat | hesapla| formatMoney }}
                              - {{prod.LocalListPriceWVat | formatMoney}}</span>
                             </td>
 
@@ -107,11 +110,14 @@ export default {
             AppGuID:null,
             search_text:"m131 rot bas",
             SearchResult:[],
-            PingResult:null
+            PingResult:null,
+            DevMode:null
         }
     },
     mounted() {
       axios.defaults.baseURL = this.base_url
+        this.DevMode = JSON.parse(localStorage.getItem('DevMode'))
+
         this.AppGuID = localStorage.appGuid
         if (this.AppGuID == null){
             this.getGuid()
@@ -122,12 +128,14 @@ export default {
 
         this.LoginAuth.InstallationGUID = this.AppGuID
         this.SessionAuth.InstallationGUID = this.AppGuID
-        this.SessionAuth.SessionID = this.SessionKey.split('||')[0]
+        this.SessionAuth.SessionID = this.SessionKey ? this.SessionKey.split('||')[0] : null
         this.SessionAuth.Password = this.PasswordKey
+
 
         if(this.SessionKey != null){
             this.getPing()
         }
+
     },
     filters:{
          formatMoney: function(n) {
@@ -137,6 +145,11 @@ export default {
                 let yuzde = 18;
                 return  n+(n*yuzde/100);
 
+        }
+    },
+    watch: {
+        DevMode: function (val) {
+            localStorage.setItem('DevMode',val)
         }
     },
     methods:{
@@ -153,7 +166,7 @@ export default {
                             localStorage.removeItem('sessionKey')
                             localStorage.removeItem('passwordKey')
                             localStorage.removeItem('sessionResult')
-                            this.sessionKey = null
+                            this.SessionKey = null
                             this.SessionResult = null
                             this.SearchResult = null
                             this.PasswordKey = null
@@ -161,7 +174,18 @@ export default {
                         })
                     }
                 }
-            })
+            }).catch( (err)=>{
+console.log(err)
+                localStorage.removeItem('appGuid')
+                localStorage.removeItem('sessionKey')
+                localStorage.removeItem('passwordKey')
+                localStorage.removeItem('sessionResult')
+                this.SessionKey = null
+                this.SessionResult = null
+                this.SearchResult = null
+                this.PasswordKey = null
+                this.AppGuID = null
+            } )
         },
         searchText(){
             axios.post('ProductSearch',{
