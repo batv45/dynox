@@ -108,7 +108,7 @@ export default {
             SessionKey:0,
             PasswordKey:null,
             AppGuID:null,
-            search_text:"m131 rot bas",
+            search_text:null,
             SearchResult:[],
             PingResult:null,
             DevMode:null
